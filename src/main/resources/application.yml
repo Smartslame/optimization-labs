@@ -1,0 +1,21 @@
+server:
+  port: 8091
+  shutdown: graceful # default immediate (for tomcat requests)
+
+spring:
+  lifecycle:
+    timeout-per-shutdown-phase: 45s # default 30 seconds (for tomcat requests)
+
+management:
+  endpoint:
+    loggers:
+      enabled: true
+    metrics:
+      enabled: true
+  export:
+    prometheus:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: info,metrics,prometheus,loggers
