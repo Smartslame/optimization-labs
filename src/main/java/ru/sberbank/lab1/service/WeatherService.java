@@ -8,9 +8,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.List;
+import java.time.LocalDate;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -26,6 +25,7 @@ public class WeatherService {
     private static final int N_THREADS = 4;
     private final RestTemplate restTemplate;
     private final ExecutorService executor = Executors.newFixedThreadPool(N_THREADS);
+    private final Map<LocalDate, Double> tempCache = new HashMap<>();
 
     public WeatherService(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
@@ -39,13 +39,7 @@ public class WeatherService {
         for (int i = 0; i < days; i++) {
             int finalI = i;
             CompletableFuture<Void> completableFuture = CompletableFuture.runAsync(
-                    () -> {
-                        try {
-                            temps.add(getTempForDay(finalI));
-                        } catch (Exception e) {
-                            log.error("Error during completable future", e);
-                        }
-                    },
+                    () -> temps.add(getTempForDay(finalI)),
                     executor
             );
             futures.add(completableFuture);
@@ -64,11 +58,21 @@ public class WeatherService {
         return temps;
     }
 
-    private Double getTempForDay(int dayShift) throws JSONException {
+    private Double getTempForDay(int dayShift) {
         Long currentDayInSec = Calendar.getInstance().getTimeInMillis() / 1000;
         Long oneDayInSec = 24 * 60 * 60L;
         Long curDateSec = currentDayInSec - dayShift * oneDayInSec;
-        return getTemperatureFromInfo(curDateSec.toString());
+        LocalDate date = LocalDate.now().minusDays(dayShift);
+
+        tempCache.computeIfAbsent(date, k -> {
+            try {
+                return getTemperatureFromInfo(curDateSec.toString());
+            } catch (JSONException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        return tempCache.get(date);
     }
 
     private String getTodayWeather(String date) {
