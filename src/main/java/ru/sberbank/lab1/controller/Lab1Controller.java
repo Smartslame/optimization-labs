@@ -2,7 +2,6 @@ package ru.sberbank.lab1.controller;
 
 import io.micrometer.core.annotation.Timed;
 import lombok.extern.slf4j.Slf4j;
-import org.json.JSONException;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -27,7 +26,7 @@ public class Lab1Controller {
     public List<Double> getWeatherForPeriod(Integer days) {
         try {
             return weatherService.getTemperatureForLastDays(days);
-        } catch (JSONException e) {
+        } catch (Exception e) {
             log.error("Error to get weather for period", e);
             return emptyList();
         }
